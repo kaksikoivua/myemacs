@@ -1,0 +1,12 @@
+*.elc
+*~
+.DS_Store
+auto-save-list
+bookmarks
+config.el
+eln-cache
+elpa
+eshell
+org-persist
+projects
+transient

@@ -1,0 +1,595 @@
+* Header
+#+begin_src emacs-lisp
+  ;;; config.el --- Personal configuration file
+
+  ;;; Commentary:
+
+  ;;; Code:
+#+end_src
+
+* Font
+#+begin_src emacs-lisp
+  (add-to-list 'default-frame-alist '(font . "IBM Plex Mono-12"))
+#+end_src
+
+* Frame Transparency
+#+begin_src emacs-lisp
+  (defun my/toggle-frame-transparency ()
+    "Toggle frame transparency on or off."
+    (interactive)
+    (let* ((alpha (frame-parameter nil 'alpha)))
+      (if (or (eq alpha nil)
+              (eq alpha 100))
+          (set-frame-parameter nil 'alpha 80)
+        (set-frame-parameter nil 'alpha 100))))
+
+  (add-hook 'after-init-hook #'my/toggle-frame-transparency)
+  (global-set-key (kbd "C-c f t") #'my/toggle-frame-transparency)
+#+end_src
+
+* Theme
+#+begin_src emacs-lisp
+  (add-hook 'after-init-hook (lambda ()
+                               (require-theme 'modus-themes)
+                               (load-theme 'modus-vivendi)))
+
+  (with-eval-after-load 'modus-themes
+    (custom-set-variables
+     '(modus-themes-italic-constructs t)
+     '(modus-themes-bold-constructs t)
+     '(modus-themes-intense-mouseovers t)
+     '(modus-themes-headings '((1 . (rainbow variable-pitch 1.4))
+                               (2 . (variable-pitch 1.2))
+                               (t . (variable-pitch semibold 1.1))))
+     '(modus-themes-org-agenda '((header-block . (variable-pitch 1.3))
+                                 (header-date . (grayscale workaholic bold-today))
+                                 (event . (accented varied))
+                                 (scheduled . uniform)
+                                 (habit . traffic-light)))
+     '(modus-themes-fringes nil)
+     '(modus-themes-lang-checkers '(background intense))
+     '(modus-themes-org-blocks 'tinted-background)
+     '(modus-themes-mode-line '(borderless accented 4 0.9))
+     '(modus-themes-diffs 'desaturated)
+     '(modus-themes-completions '((matches . (extrabold))
+                                  (selection . (accented semibold))
+                                  (popup . (accented intense))))
+     '(modus-themes-prompts '(intense bold))
+     '(modus-themes-hl-line '(accented))
+     '(modus-themes-subtle-line-numbers t)
+     '(modus-themes-markup '(bold))
+     '(modus-themes-paren-match '(bold))
+     '(modus-themes-links '(bold))
+     '(modus-themes-region '(bg-only))
+     '(modus-themes-deuteranopia t)
+     '(modus-themes-box-buttons '(flat accented variable-pitch))))
+#+end_src
+
+* use-package
+#+begin_src emacs-lisp
+  (eval-when-compile
+    (require 'use-package)
+    (customize-set-variable 'use-package-always-ensure t))
+  (require 'bind-key)
+#+end_src
+
+* Variables defined in C source code
+Use emacs pseudo-package to set variables defined in C source code.
+#+begin_src emacs-lisp
+  (use-package emacs
+    :config
+    (setq coding-system-for-read 'utf-8
+          coding-system-for-write 'utf-8
+          scroll-conservatively 1
+          scroll-margin 5)
+    (setq-default cursor-type 'bar
+                  indent-tabs-mode nil
+                  tab-width 2))
+#+end_src
+
+* Packages
+** Cape :Completion:
+#+begin_src emacs-lisp
+  (use-package cape
+    :commands cape-file
+    :init
+    (add-to-list 'completion-at-point-functions #'cape-file))
+#+end_src
+
+** cc-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package cc-mode
+    :ensure nil
+    :defer t
+    :hook (c-mode-common . (lambda ()
+                             (setq tab-width 4)))
+    :custom
+    (c-basic-offset 4))
+#+end_src
+
+** Consult :Completion:
+#+begin_src emacs-lisp
+  (use-package consult
+    :demand t
+    :bind (("C-s" . consult-line)
+           ("C-x b" . consult-buffer)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package consult-imenu
+    :ensure nil
+    :bind ("C-c c i" . consult-imenu))
+#+end_src
+
+** Corfu :Completion:
+#+begin_src emacs-lisp
+  (use-package corfu
+    :hook (after-init . global-corfu-mode)
+    :custom
+    (corfu-cycle t)
+    (corfu-auto t))
+#+end_src
+
+** css-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package css-mode
+    :ensure nil
+    :defer t
+    :custom
+    (css-indent-offset 2))
+#+end_src
+
+** cus-edit
+#+begin_src emacs-lisp
+  (use-package cus-edit
+    :ensure nil
+    :defer t
+    :custom
+    (custom-file (make-temp-file "emacs-custom-")
+                 "Make Custom UI code disposable."))
+#+end_src
+
+** diff-hl
+#+begin_src emacs-lisp
+  (use-package diff-hl
+    :hook ((after-revert . diff-hl-revert-hunk)
+           (after-init . global-diff-hl-mode)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package diff-hl-dired
+    :ensure nil
+    :hook dired-mode)
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package diff-hl-margin
+    :ensure nil
+    :hook global-diff-hl-mode)
+#+end_src
+
+** Dired
+#+begin_src emacs-lisp
+  (use-package dired
+    :ensure nil
+    :bind (("C-c d l" . my/dired-left)
+           ("C-c d s" . my/dired-sidebar))
+    :commands dired-hide-details-mode
+    :preface
+    (defun my/dired-left ()
+      "Display Dired on the left."
+      (interactive)
+      (delete-other-windows)
+      (dired-other-window default-directory)
+      (window-swap-states))
+    (defun my/dired-sidebar ()
+      "Display Dired as a sidebar."
+      (interactive)
+      (my/dired-left)
+      (dired-hide-details-mode)
+      (shrink-window-horizontally 60)))
+#+end_src
+
+** display-fill-column-indicator
+#+begin_src emacs-lisp
+  (use-package display-fill-column-indicator
+    :ensure nil
+    :bind ("C-c d f" . display-fill-column-indicator-mode)
+    :config
+    (setq-default display-fill-column-indicator-column 80))
+#+end_src
+
+** display-line-numbers
+#+begin_src emacs-lisp
+  (use-package display-line-numbers
+    :ensure nil
+    :hook (prog-mode
+           text-mode))
+#+end_src
+
+** dockerfile-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package dockerfile-mode
+    :defer t)
+#+end_src
+
+** Eglot
+#+begin_src emacs-lisp
+  (use-package eglot
+    :ensure nil
+    :hook ((c-mode-common
+            php-mode
+            python-mode
+            rust-mode
+            typescript-mode)
+           . eglot-ensure)
+    :config
+    (add-to-list 'eglot-server-programs '(php-mode . ("intelephense" "--stdio"))))
+#+end_src
+
+** elec-pair
+#+begin_src emacs-lisp
+  (use-package elec-pair
+    :ensure nil
+    ;; Inserting an opening delimiter, the matching closing delimiter is
+    ;; automatically inserted.
+    :hook (after-init . electric-pair-mode))
+#+end_src
+
+** Embark :Completion:
+#+begin_src emacs-lisp
+  (use-package embark
+    :bind ("C-c e a" . embark-act))
+#+end_src
+
+** embark-consult :Completion:
+#+begin_src emacs-lisp
+  (use-package embark-consult
+    :after (consult
+            embark))
+#+end_src
+
+** Files
+#+begin_src emacs-lisp
+  (use-package files
+    :ensure nil
+    :custom
+    (make-backup-files nil "Stop creating ~ files.")
+    :config
+    ;; Suppress the warning on macOS.
+    ;; Warning message:
+    ;; ls does not support --dired; see ‘dired-use-ls-dired’ for more details.
+    (when (and (eq system-type 'darwin) (executable-find "gls"))
+      (setq insert-directory-program "gls")))
+#+end_src
+
+** Ibuffer
+#+begin_src emacs-lisp
+  (use-package ibuffer
+    :ensure nil
+    :bind ("C-x C-b" . ibuffer))
+#+end_src
+
+** JS :Languages:
+#+begin_src emacs-lisp
+  (use-package js
+    :ensure nil
+    :defer t
+    :custom
+    (js-indent-level 2))
+#+end_src
+
+** Magit
+#+begin_src emacs-lisp
+  (use-package magit
+    :defer t)
+#+end_src
+
+** Marginalia :Completion:
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :hook vertico-mode)
+#+end_src
+
+** markdown-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package markdown-mode
+    :defer t)
+#+end_src
+
+** Mule
+#+begin_src emacs-lisp
+  (use-package mule
+    :ensure nil
+    :config
+    (prefer-coding-system 'utf-8))
+#+end_src
+
+** Nano Modeline
+#+begin_src emacs-lisp
+  (use-package nano-modeline
+    :hook (after-init
+           ((after-revert
+             after-save
+             buffer-list-update
+             find-file)
+            . my/nano-modeline-colorize-branch-name))
+    :preface
+    (defun my/nano-modeline-colorize-branch-name ()
+      "Colorize VCS branch name depending on the state."
+      (if (stringp (buffer-file-name))
+          (let* ((file (buffer-file-name))
+                 (backend (vc-backend file))
+                 (state (vc-state file backend)))
+            (cond ((or (eq state 'up-to-date)
+                       (eq state 'needs-update))
+                   (set-face-foreground 'nano-modeline-active-primary
+                                        (face-foreground 'vc-up-to-date-state)))
+                  ((stringp state)
+                   (set-face-foreground 'nano-modeline-active-primary
+                                        (face-foreground 'vc-locked-state)))
+                  ((eq state 'added)
+                   (set-face-foreground 'nano-modeline-active-primary
+                                        (face-foreground 'vc-locally-added-state)))
+                  ((eq state 'conflict)
+                   (set-face-foreground 'nano-modeline-active-primary
+                                        (face-foreground 'vc-conflict-state)))
+                  ((eq state 'removed)
+                   (set-face-foreground 'nano-modeline-active-primary
+                                        (face-foreground 'vc-removed-state)))
+                  ((eq state 'missing)
+                   (set-face-foreground 'nano-modeline-active-primary
+                                        (face-foreground 'vc-missing-state)))
+                  (t
+                   (set-face-foreground 'nano-modeline-active-primary
+                                        (face-foreground 'vc-edited-state)))))
+        (unless (and (string= (substring (string-trim (buffer-name)) 0 1) "*")
+                     (string= (substring (string-trim (buffer-name)) -1) "*"))
+          (set-face-foreground 'nano-modeline-active-primary
+                               (cdr (assoc 'fg-special-mild
+                                           modus-themes-vivendi-colors))))))
+    :custom
+    (nano-modeline-position 'bottom)
+    :defines modus-themes-vivendi-colors)
+#+end_src
+
+** Orderless :Completion:
+#+begin_src emacs-lisp
+  (use-package orderless
+    :custom
+    ;; These variables are defined in minibuffer.el.
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles basic partial-completion)))))
+#+end_src
+
+** Org :Languages:Org:
+#+begin_src emacs-lisp
+  (use-package org
+    :ensure nil
+    :defer t
+    :custom
+    ;; This variable is defined in org-keys.el.
+    (org-use-speed-commands t)
+    ;; These variables are defined in org.el.
+    (org-startup-truncated nil "Wrap lines.")
+    (org-startup-indented t)
+    (org-ellipsis " ▾")
+    (org-directory "~/Dropbox/Org")
+    (org-default-notes-file (expand-file-name "notes.org" org-directory))
+    (org-enforce-todo-dependencies t)
+    (org-log-done 'time)
+    (org-tags-column 0)
+    (org-agenda-files `(,org-directory)))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package org-capture
+    :ensure nil
+    :bind ("C-c o c" . org-capture)
+    :custom
+    (org-capture-templates
+     `(("n" "Note" entry (file+headline org-default-notes-file "Notes")
+        "* %U\n%?")
+       ("t" "Todo" entry (file+headline
+                          ,(expand-file-name "gtd.org" org-directory) "Inbox")
+        "* TODO %?"))))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package org-refile
+    :ensure nil
+    :defer t
+    :custom
+    (org-refile-targets '((org-agenda-files :maxlevel . 3))))
+#+end_src
+
+** org-modern :Org:
+#+begin_src emacs-lisp
+  (use-package org-modern
+    :hook org-mode
+    :custom
+    (org-modern-star '("♔" "♕" "♖" "♗" "♘" "♙")))
+#+end_src
+
+** php-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package php-mode
+    :defer t)
+#+end_src
+
+** Posframe
+#+begin_src emacs-lisp
+  (use-package posframe
+    :defer t)
+#+end_src
+
+** Python :Languages:
+#+begin_src emacs-lisp
+  (use-package python
+    :ensure nil
+    :defer t
+    :hook (python-mode . (lambda ()
+                           (setq tab-width 4))))
+#+end_src
+
+** realgud-lldb
+#+begin_src emacs-lisp
+  (use-package realgud-lldb
+    :disabled
+    :defer t)
+#+end_src
+
+** rust-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package rust-mode
+    :defer t
+    :hook (rust-mode . (lambda ()
+                         (setq tab-width 4)))
+    :custom
+    (rust-format-on-save t))
+#+end_src
+
+** Simple
+#+begin_src emacs-lisp
+  (use-package simple
+    :ensure nil
+    :preface
+    (advice-add 'kill-ring-save :after (lambda (&rest args)
+                                         (setq deactivate-mark nil)
+                                         (message "Copied")))
+    (advice-add 'yank :before (lambda (&optional arg)
+                                (if (region-active-p)
+                                    (delete-region (region-beginning)
+                                                   (region-end))))))
+#+end_src
+
+** Startup
+#+begin_src emacs-lisp
+  (use-package startup
+    :ensure nil
+    :no-require t
+    :custom
+    (inhibit-startup-screen t)
+    (initial-scratch-message nil))
+#+end_src
+
+** typescript-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package typescript-mode
+    :mode "\\.tsx\\'"
+    :custom
+    (typescript-indent-level 2))
+#+end_src
+
+** Vertico :Completion:
+#+begin_src emacs-lisp
+  (use-package vertico
+    :hook after-init
+    :custom
+    (vertico-cycle t))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package vertico-directory
+    :ensure nil
+    :after vertico
+    :bind (:map vertico-map
+                ("RET" . vertico-directory-enter)
+                ("DEL" . vertico-directory-delete-char)
+                ("M-DEL" . vertico-directory-delete-word))
+    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
+    :defines vertico-map)
+#+end_src
+
+** vertico-posframe :Completion:
+#+begin_src emacs-lisp
+  (use-package vertico-posframe
+    :hook vertico-mode)
+#+end_src
+
+** Warnings
+#+begin_src emacs-lisp
+  (use-package warnings
+    :ensure nil
+    :defer t
+    :custom
+    (warning-minimum-level :error))
+#+end_src
+
+** web-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package web-mode
+    :mode "\\.svelte\\'"
+    :hook (web-mode . (lambda ()
+                        (let* ((extension (file-name-extension buffer-file-name)))
+                          (cond ((or (string= extension "svelte")
+                                     ;; (string= extension "")
+                                     )
+                                 (my/web-mode-indent 2))
+                                ((or (string= extension "php")
+                                     ;; (string= extension "")
+                                     )
+                                 (my/web-mode-indent 4))))))
+    :preface
+    (defun my/web-mode-indent (number)
+      (setq tab-width number)
+      (setq-local web-mode-script-padding number
+                  web-mode-style-padding number
+                  web-mode-markup-indent-offset number
+                  web-mode-css-indent-offset number
+                  web-mode-code-indent-offset number)))
+#+end_src
+
+** which-key
+#+begin_src emacs-lisp
+  (use-package which-key
+    :hook after-init)
+#+end_src
+
+** Whitespace
+#+begin_src emacs-lisp
+  (use-package whitespace
+    :ensure nil
+    :hook ((after-init . global-whitespace-mode)
+           (markdown-mode . (lambda ()
+                              (setq-local whitespace-action nil))))
+    :custom
+    (whitespace-style '(face trailing tab-mark))
+    (whitespace-action '(auto-cleanup)
+                       "Cleanup any trailing whitespace when buffer is written."))
+#+end_src
+
+** Windmove
+#+begin_src emacs-lisp
+  (use-package windmove
+    :ensure nil
+    :bind (("C-c w <left>" . windmove-left)
+           ("C-c w <up>" . windmove-up)
+           ("C-c w <right>" . windmove-right)
+           ("C-c w <down>" . windmove-down)))
+#+end_src
+
+** yaml-mode :Languages:
+#+begin_src emacs-lisp
+  (use-package yaml-mode
+    :defer t)
+#+end_src
+
+** Yasnippet
+#+begin_src emacs-lisp
+  (use-package yasnippet
+    :hook (after-init . yas-global-mode))
+#+end_src
+
+** yasnippet-snippets
+#+begin_src emacs-lisp
+  (use-package yasnippet-snippets
+    :defer t)
+#+end_src
+
+* Footer
+#+begin_src emacs-lisp
+  (provide 'config)
+
+  ;;; config.el ends here
+#+end_src

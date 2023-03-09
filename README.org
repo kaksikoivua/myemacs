@@ -1,0 +1,5 @@
+This is my personal Emacs configuration.
+
+#+begin_src shell
+  git clone https://codeberg.org/kaksikoivua/myemacs.git ~/.emacs.d
+#+end_src
